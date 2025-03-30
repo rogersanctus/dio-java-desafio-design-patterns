@@ -1,0 +1,22 @@
+# Arquivos gerados pelo Gradle
+.gradle/
+build/
+
+# Diretórios e arquivos temporários do Gradle
+.gradle
+**/build/
+
+# Arquivos gerados pelo Eclipse JDT
+.classpath
+.project
+.settings/
+.factorypath
+bin/
+*.launch
+
+# Arquivos de log e temporários
+*.log
+*.tmp
+
+# Outros arquivos comuns a ignorar
+*.swp       # Vim

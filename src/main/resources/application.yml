@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:designpatterns
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate.ddl-auto: update
+    properties.hibernate.record_support: true
+    properties.hibernate.jpa_compliance: false
+  h2:
+    console.enabled: true

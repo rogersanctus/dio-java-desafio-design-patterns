@@ -1,0 +1,32 @@
+plugins {
+  id 'eclipse'
+  id 'org.springframework.boot' version '3.4.2'
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'java'
+}
+
+group = 'me.rogerioferreira.designpatterns'
+version = '0.0.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    implementation 'com.h2database:h2'
+
+    implementation 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_22
+  targetCompatibility = JavaVersion.VERSION_22
+}
