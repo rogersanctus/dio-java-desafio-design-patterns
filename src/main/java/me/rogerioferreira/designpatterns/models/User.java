@@ -17,6 +17,5 @@ public class User {
   String id;
   String nome;
   String companyName;
-  double assignedPixFee;
   double averageSalesVolume;
 }
