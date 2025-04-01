@@ -2,6 +2,8 @@ package me.rogerioferreira.designpatterns.services;
 
 import org.springframework.stereotype.Service;
 
+import me.rogerioferreira.designpatterns.enums.PaymentStatus;
+
 @Service
 public class FintechDasQuantasPixProvider implements PixApiProvider {
   @Override
@@ -15,8 +17,7 @@ public class FintechDasQuantasPixProvider implements PixApiProvider {
   }
 
   @Override
-  public boolean isPaymentCompleted(String paymentOrderId) {
-    return true;
+  public PaymentStatus getStatus(String paymentOrderId) {
+    return PaymentStatus.COMPLETED;
   }
-
 }
