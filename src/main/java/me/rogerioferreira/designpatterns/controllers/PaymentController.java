@@ -1,6 +1,5 @@
 package me.rogerioferreira.designpatterns.controllers;
 
-import java.util.HashMap;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import me.rogerioferreira.designpatterns.dtos.ErrorMessage;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderCreationDto;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderResultDto;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderStatus;
@@ -48,11 +48,7 @@ public class PaymentController {
     var mayBeUser = userRepository.findById(paymentOrderCreationDTO.userId());
 
     if (!mayBeUser.isPresent()) {
-      return ResponseEntity.badRequest().body(new HashMap<String, Object>() {
-        {
-          put("message", "User not found");
-        }
-      });
+      return ResponseEntity.badRequest().body(new ErrorMessage("User not found"));
     }
 
     var user = mayBeUser.get();
@@ -62,11 +58,7 @@ public class PaymentController {
     var pixApiProvider = pixProviderService.getApiProvider(pixProviderWithFee.pixProvider());
 
     if (pixApiProvider == null) {
-      return ResponseEntity.badRequest().body(new HashMap<String, Object>() {
-        {
-          put("message", "No pix api provider found for this user");
-        }
-      });
+      return ResponseEntity.badRequest().body(new ErrorMessage("No pix api provider found for this user"));
     }
 
     var internalPaymentOrderId = UUID.randomUUID().toString();
@@ -103,11 +95,7 @@ public class PaymentController {
     var mayBePixProvider = pixProviderService.getProviderById(paymentOrder.getProviderId());
 
     if (!mayBePixProvider.isPresent()) {
-      return ResponseEntity.internalServerError().body(new HashMap<>() {
-        {
-          put("message", "Provider not found for this payment order");
-        }
-      });
+      return ResponseEntity.internalServerError().body(new ErrorMessage("Provider not found for this payment order"));
     }
 
     var pixProvider = mayBePixProvider.get();
