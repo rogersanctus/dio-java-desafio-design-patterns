@@ -1,11 +1,21 @@
 package me.rogerioferreira.designpatterns.services;
 
+import java.util.HashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import me.rogerioferreira.designpatterns.dtos.PixProviderWithFee;
 import me.rogerioferreira.designpatterns.models.PixProvider;
+import me.rogerioferreira.designpatterns.repositories.PixProviderRepository;
 
 @Component
 public class PixProviderService {
+  private PixApiProvider pixApiProvider;
+
+  @Autowired
+  private PixProviderRepository pixProviderRepository;
+
   public double interpolateSalesAndFees(PixProvider pixProvider, double salesVolume) {
     salesVolume = Math.min(salesVolume, pixProvider.getMaxSalesVolume()); // Limita o volume de vendas ao máximo do
     // provider
@@ -21,5 +31,33 @@ public class PixProviderService {
     interpolatedFee /= salesDifference;
 
     return interpolatedFee;
+  }
+
+  public void setPixApiProvider(PixApiProvider pixApiProvider) {
+    this.pixApiProvider = pixApiProvider;
+  }
+
+  public PixProviderWithFee getPixProviderWithFee(double salesVolume) {
+    return pixProviderRepository
+        .findAll()
+        .stream()
+        .map(pixProvider -> new PixProviderWithFee(pixProvider, interpolateSalesAndFees(pixProvider, salesVolume)))
+        .sorted((a, b) -> Double.compare(
+            a.fee(),
+            b.fee()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  public PixApiProvider getApiProvider(PixProviderWithFee pixProviderWithFee) {
+    if (pixProviderWithFee == null) {
+      return null;
+    }
+
+    return switch (pixProviderWithFee.pixProvider().getName()) {
+      case "DasQuantas" -> new FintechDasQuantasPixProvider();
+      case "PagueMais" -> new FintechPagueMaisPixProvider();
+      default -> null;
+    };
   }
 }
