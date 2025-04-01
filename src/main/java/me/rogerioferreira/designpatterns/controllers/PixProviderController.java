@@ -1,8 +1,10 @@
 package me.rogerioferreira.designpatterns.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +18,19 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import me.rogerioferreira.designpatterns.models.PixProvider;
 import me.rogerioferreira.designpatterns.repositories.PixProviderRepository;
+import me.rogerioferreira.designpatterns.services.FintechDasQuantasPixProvider;
+import me.rogerioferreira.designpatterns.services.FintechPagueMaisPixProvider;
+import me.rogerioferreira.designpatterns.services.PixApiProvider;
+import me.rogerioferreira.designpatterns.services.PixProviderService;
 
 @RestController
 @RequestMapping("/pix-providers")
 public class PixProviderController {
   @Autowired
   private PixProviderRepository pixProviderRepository;
+
+  @Autowired
+  private PixProviderService pixProviderService;
 
   @GetMapping()
   public List<PixProvider> findAll() {
@@ -78,5 +87,16 @@ public class PixProviderController {
     pixProviderRepository.deleteById(id);
 
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/provider-for-sales-volume/{salesVolume}")
+  public ResponseEntity<?> findByName(@RequestParam double salesVolume) {
+    var pixProviderWithFee = this.pixProviderService.getPixProviderWithFee(salesVolume);
+
+    if (pixProviderWithFee == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    return ResponseEntity.ok(pixProviderWithFee);
   }
 }

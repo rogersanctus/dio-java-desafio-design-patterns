@@ -7,7 +7,5 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate.ddl-auto: update
-    properties.hibernate.record_support: true
-    properties.hibernate.jpa_compliance: false
   h2:
     console.enabled: true
