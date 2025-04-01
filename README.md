@@ -12,6 +12,10 @@ A ideia do projeto é uma API fictícia de recebimento de pagamentos via PIX. Po
 E cada usuário do sistema recebe uma cobrança de tarifas dependendo do seu volume de vendas. Quando o usário inicia uma cobrança pela API, o sistema decide qual serviço externo será utilizado de acordo
 com a tarifa deste usuário.
 
+## Documentação da API
+
+Via swagger em: http://localhost:8080/swagger-ui/index.html. O projeto precisa estar em execução. Vejo como na seção abaixo.
+
 ## Rodando o projeto:
 
 Se não tiver o gradle instalado, execute o comando abaixo:
