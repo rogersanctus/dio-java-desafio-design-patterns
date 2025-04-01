@@ -1,7 +1,5 @@
 package me.rogerioferreira.designpatterns.controllers;
 
-import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,13 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import me.rogerioferreira.designpatterns.dtos.ErrorMessage;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderCreationDto;
-import me.rogerioferreira.designpatterns.dtos.PaymentOrderResultDto;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderStatus;
-import me.rogerioferreira.designpatterns.enums.PaymentStatus;
-import me.rogerioferreira.designpatterns.models.PaymentOrder;
 import me.rogerioferreira.designpatterns.models.PixProvider;
 import me.rogerioferreira.designpatterns.repositories.PaymentOrderRepository;
-import me.rogerioferreira.designpatterns.repositories.UserRepository;
+import me.rogerioferreira.designpatterns.services.PaymentOrderFacade;
 import me.rogerioferreira.designpatterns.services.PixProviderService;
 
 @RestController
@@ -32,7 +27,7 @@ public class PaymentController {
   private PaymentOrderRepository paymentOrderRepository;
 
   @Autowired
-  private UserRepository userRepository;
+  private PaymentOrderFacade paymentOrderFacade;
 
   @GetMapping("/fee-per-sales-volume/{salesVolume}")
   public ResponseEntity<Double> calculateFeePerSalesVolume(@RequestParam double salesVolume) {
@@ -45,41 +40,11 @@ public class PaymentController {
 
   @PostMapping()
   public ResponseEntity<?> createPayment(@RequestBody PaymentOrderCreationDto paymentOrderCreationDTO) {
-    var mayBeUser = userRepository.findById(paymentOrderCreationDTO.userId());
-
-    if (!mayBeUser.isPresent()) {
-      return ResponseEntity.badRequest().body(new ErrorMessage("User not found"));
-    }
-
-    var user = mayBeUser.get();
-
-    var salesVolume = user.getAverageSalesVolume();
-    var pixProviderWithFee = pixProviderService.getPixProviderWithFee(salesVolume);
-    var pixApiProvider = pixProviderService.getApiProvider(pixProviderWithFee.pixProvider());
-
-    if (pixApiProvider == null) {
-      return ResponseEntity.badRequest().body(new ErrorMessage("No pix api provider found for this user"));
-    }
-
-    var internalPaymentOrderId = UUID.randomUUID().toString();
-
-    var providerPaymentOrderId = pixApiProvider.createPaymentOrder(internalPaymentOrderId,
+    var paymentOrder = this.paymentOrderFacade.createPaymentOrder(
+        paymentOrderCreationDTO.userId(),
         paymentOrderCreationDTO.amount());
 
-    var internalPaymentOrder = new PaymentOrder(internalPaymentOrderId, providerPaymentOrderId,
-        pixProviderWithFee.pixProvider().getId(), paymentOrderCreationDTO.amount(),
-        pixProviderWithFee.fee(), PaymentStatus.CREATED);
-
-    var qrCode = pixApiProvider.getQrCode(providerPaymentOrderId);
-    var totalToReceive = paymentOrderCreationDTO.amount() * (1 - pixProviderWithFee.fee() / 100);
-
-    paymentOrderRepository.save(internalPaymentOrder);
-
-    return ResponseEntity.ok(new PaymentOrderResultDto(
-        internalPaymentOrderId,
-        qrCode,
-        pixProviderWithFee.fee(),
-        Math.round(totalToReceive * 100.0) / 100.0));
+    return ResponseEntity.ok(paymentOrder);
   }
 
   @GetMapping("/status/{paymentOrderId}")

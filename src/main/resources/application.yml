@@ -9,3 +9,5 @@ spring:
     hibernate.ddl-auto: update
   h2:
     console.enabled: true
+  devtools:
+    restart.enabled: true
