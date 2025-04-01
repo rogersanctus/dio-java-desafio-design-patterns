@@ -1,6 +1,6 @@
 package me.rogerioferreira.designpatterns.services;
 
-import java.util.HashMap;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,6 @@ import me.rogerioferreira.designpatterns.repositories.PixProviderRepository;
 
 @Component
 public class PixProviderService {
-  private PixApiProvider pixApiProvider;
 
   @Autowired
   private PixProviderRepository pixProviderRepository;
@@ -33,8 +32,8 @@ public class PixProviderService {
     return interpolatedFee;
   }
 
-  public void setPixApiProvider(PixApiProvider pixApiProvider) {
-    this.pixApiProvider = pixApiProvider;
+  public Optional<PixProvider> getProviderById(String id) {
+    return pixProviderRepository.findById(id);
   }
 
   public PixProviderWithFee getPixProviderWithFee(double salesVolume) {
@@ -49,12 +48,12 @@ public class PixProviderService {
         .orElse(null);
   }
 
-  public PixApiProvider getApiProvider(PixProviderWithFee pixProviderWithFee) {
-    if (pixProviderWithFee == null) {
+  public PixApiProvider getApiProvider(PixProvider pixProvider) {
+    if (pixProvider == null) {
       return null;
     }
 
-    return switch (pixProviderWithFee.pixProvider().getName()) {
+    return switch (pixProvider.getName()) {
       case "DasQuantas" -> new FintechDasQuantasPixProvider();
       case "PagueMais" -> new FintechPagueMaisPixProvider();
       default -> null;
