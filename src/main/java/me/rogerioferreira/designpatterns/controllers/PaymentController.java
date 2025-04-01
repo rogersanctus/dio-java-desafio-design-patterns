@@ -1,6 +1,7 @@
 package me.rogerioferreira.designpatterns.controllers;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderCreationDto;
 import me.rogerioferreira.designpatterns.dtos.PaymentOrderResultDto;
+import me.rogerioferreira.designpatterns.dtos.PaymentOrderStatus;
+import me.rogerioferreira.designpatterns.enums.PaymentStatus;
+import me.rogerioferreira.designpatterns.models.PaymentOrder;
 import me.rogerioferreira.designpatterns.models.PixProvider;
+import me.rogerioferreira.designpatterns.repositories.PaymentOrderRepository;
 import me.rogerioferreira.designpatterns.repositories.UserRepository;
 import me.rogerioferreira.designpatterns.services.PixProviderService;
 
@@ -22,6 +27,9 @@ import me.rogerioferreira.designpatterns.services.PixProviderService;
 public class PaymentController {
   @Autowired
   private PixProviderService pixProviderService;
+
+  @Autowired
+  private PaymentOrderRepository paymentOrderRepository;
 
   @Autowired
   private UserRepository userRepository;
@@ -51,7 +59,7 @@ public class PaymentController {
 
     var salesVolume = user.getAverageSalesVolume();
     var pixProviderWithFee = pixProviderService.getPixProviderWithFee(salesVolume);
-    var pixApiProvider = pixProviderService.getApiProvider(pixProviderWithFee);
+    var pixApiProvider = pixProviderService.getApiProvider(pixProviderWithFee.pixProvider());
 
     if (pixApiProvider == null) {
       return ResponseEntity.badRequest().body(new HashMap<String, Object>() {
@@ -61,21 +69,52 @@ public class PaymentController {
       });
     }
 
-    var paymentOrderId = pixApiProvider.createPaymentOrder(paymentOrderCreationDTO.externalId(),
+    var internalPaymentOrderId = UUID.randomUUID().toString();
+
+    var providerPaymentOrderId = pixApiProvider.createPaymentOrder(internalPaymentOrderId,
         paymentOrderCreationDTO.amount());
 
-    var qrCode = pixApiProvider.getQrCode(paymentOrderId);
+    var internalPaymentOrder = new PaymentOrder(internalPaymentOrderId, providerPaymentOrderId,
+        pixProviderWithFee.pixProvider().getId(), paymentOrderCreationDTO.amount(),
+        pixProviderWithFee.fee(), PaymentStatus.CREATED);
+
+    var qrCode = pixApiProvider.getQrCode(providerPaymentOrderId);
     var totalToReceive = paymentOrderCreationDTO.amount() * (1 - pixProviderWithFee.fee() / 100);
 
+    paymentOrderRepository.save(internalPaymentOrder);
+
     return ResponseEntity.ok(new PaymentOrderResultDto(
-        paymentOrderId,
+        internalPaymentOrderId,
         qrCode,
         pixProviderWithFee.fee(),
         Math.round(totalToReceive * 100.0) / 100.0));
   }
 
-  @GetMapping("/completed/{paymentOrderId}")
-  public ResponseEntity<?> isPaymentCompleted(@RequestParam String paymentOrderId) {
-    return ResponseEntity.ok("TODO");
+  @GetMapping("/status/{paymentOrderId}")
+  public ResponseEntity<?> getStatus(@RequestParam String paymentOrderId) {
+    var mayBePaymentOrder = this.paymentOrderRepository.findById(paymentOrderId);
+
+    if (!mayBePaymentOrder.isPresent()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    var paymentOrder = mayBePaymentOrder.get();
+
+    var mayBePixProvider = pixProviderService.getProviderById(paymentOrder.getProviderId());
+
+    if (!mayBePixProvider.isPresent()) {
+      return ResponseEntity.internalServerError().body(new HashMap<>() {
+        {
+          put("message", "Provider not found for this payment order");
+        }
+      });
+    }
+
+    var pixProvider = mayBePixProvider.get();
+    var pixApiProvider = pixProviderService.getApiProvider(pixProvider);
+
+    var paymentStatus = pixApiProvider.getStatus(paymentOrderId);
+
+    return ResponseEntity.ok(new PaymentOrderStatus(paymentOrderId, paymentStatus));
   }
 }
